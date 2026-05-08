@@ -24,6 +24,19 @@ export function formatPct(value) {
   return `${Number(value).toFixed(2)}%`
 }
 
+export function formatNumber(value, options = {}) {
+  if (value === null || value === undefined || value === '') return '-'
+
+  return new Intl.NumberFormat('en-US', options).format(Number(value))
+}
+
+export function formatAmount(value) {
+  return formatNumber(value, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
 export function formatPricingType(value) {
   if (!value) return '-'
 
