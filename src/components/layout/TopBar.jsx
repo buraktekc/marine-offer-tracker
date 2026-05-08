@@ -15,7 +15,7 @@ function TopBar({ user }) {
 
   return (
     <header className="flex min-h-16 items-center gap-3 border-b border-slate-200 bg-white px-4 md:px-8">
-      <div className="relative max-w-xl flex-1">
+      <div className="relative min-w-0 max-w-xl flex-1">
         <Search
           className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
           aria-hidden="true"

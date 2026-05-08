@@ -28,6 +28,18 @@ function cleanCompanyTerms(terms) {
   }
 }
 
+function normalizeStats(stats) {
+  return {
+    total_offers: Number(stats?.total_offers || 0),
+    returned_offers: Number(stats?.returned_offers || 0),
+    offer_return_rate_pct:
+      stats?.offer_return_rate_pct === null ||
+      stats?.offer_return_rate_pct === undefined
+        ? null
+        : Number(stats.offer_return_rate_pct),
+  }
+}
+
 async function getCurrentUserId() {
   const {
     data: { user },
@@ -49,13 +61,25 @@ async function fetchCompanies({ includeInactive = false } = {}) {
     query = query.eq('is_active', true)
   }
 
-  const { data, error } = await query
+  const [
+    { data: companies, error },
+    { data: statsRows, error: statsError },
+  ] = await Promise.all([
+    query,
+    supabase.from('company_return_stats').select('*'),
+  ])
 
   if (error) throw error
+  if (statsError) throw statsError
 
-  return (data || []).map((company) => ({
+  const statsByCompany = new Map(
+    (statsRows || []).map((stats) => [stats.company_id, stats]),
+  )
+
+  return (companies || []).map((company) => ({
     ...company,
     company_terms: normalizeMaybeArray(company.company_terms),
+    return_stats: normalizeStats(statsByCompany.get(company.id)),
   }))
 }
 
