@@ -1,9 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import ProtectedRoute from './components/layout/ProtectedRoute'
+import AppLayout from './components/layout/AppLayout'
 import Companies from './pages/Companies'
 import Dashboard from './pages/Dashboard'
-import Login from './pages/Login'
 import Notes from './pages/Notes'
 import Quotes from './pages/Quotes'
 import Vessels from './pages/Vessels'
@@ -15,8 +14,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="/companies" element={<Companies />} />
             <Route path="/vessels" element={<Vessels />} />

@@ -83,17 +83,6 @@ function cleanVesselTerms(overrideTerms, companyTerms) {
   }
 }
 
-async function getCurrentUserId() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error) throw error
-
-  return user?.id || null
-}
-
 async function fetchVessels({ includeInactive = false } = {}) {
   let vesselQuery = supabase
     .from('vessels')
@@ -164,10 +153,9 @@ async function createVessel({
   overrideTerms,
   companyTerms,
 }) {
-  const created_by = await getCurrentUserId()
   const { data: createdVessel, error: vesselError } = await supabase
     .from('vessels')
-    .insert([{ ...cleanVessel(vessel), created_by, is_active: true }])
+    .insert([{ ...cleanVessel(vessel), is_active: true }])
     .select()
     .single()
 
