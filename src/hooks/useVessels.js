@@ -13,6 +13,18 @@ function cleanVessel(vessel) {
   }
 }
 
+function normalizeStats(stats) {
+  return {
+    total_offers: Number(stats?.total_offers || 0),
+    returned_offers: Number(stats?.returned_offers || 0),
+    offer_return_rate_pct:
+      stats?.offer_return_rate_pct === null ||
+      stats?.offer_return_rate_pct === undefined
+        ? null
+        : Number(stats.offer_return_rate_pct),
+  }
+}
+
 function normalizeDiscount(value) {
   return normalizeEmpty(value) === null ? null : Number(value)
 }
@@ -92,17 +104,25 @@ async function fetchVessels({ includeInactive = false } = {}) {
     vesselQuery = vesselQuery.eq('is_active', true)
   }
 
-  const [{ data: vessels, error: vesselError }, { data: effectiveTerms, error: termsError }] =
-    await Promise.all([
-      vesselQuery,
-      supabase.from('effective_vessel_terms').select('*'),
-    ])
+  const [
+    { data: vessels, error: vesselError },
+    { data: effectiveTerms, error: termsError },
+    { data: statsRows, error: statsError },
+  ] = await Promise.all([
+    vesselQuery,
+    supabase.from('effective_vessel_terms').select('*'),
+    supabase.from('vessel_return_stats').select('*'),
+  ])
 
   if (vesselError) throw vesselError
   if (termsError) throw termsError
+  if (statsError) throw statsError
 
   const termsByVessel = new Map(
     (effectiveTerms || []).map((terms) => [terms.vessel_id, terms]),
+  )
+  const statsByVessel = new Map(
+    (statsRows || []).map((stats) => [stats.vessel_id, stats]),
   )
 
   return (vessels || []).map((vessel) => ({
@@ -110,6 +130,7 @@ async function fetchVessels({ includeInactive = false } = {}) {
     company: vessel.companies,
     vessel_terms: normalizeMaybeArray(vessel.vessel_terms),
     effective_terms: termsByVessel.get(vessel.id) || null,
+    return_stats: normalizeStats(statsByVessel.get(vessel.id)),
   }))
 }
 
