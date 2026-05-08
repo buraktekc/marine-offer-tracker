@@ -12,17 +12,6 @@ function cleanNote(note) {
   }
 }
 
-async function getCurrentUserId() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error) throw error
-
-  return user?.id || null
-}
-
 async function fetchNotes() {
   const { data, error } = await supabase
     .from('notes')
@@ -37,10 +26,9 @@ async function fetchNotes() {
 }
 
 async function createNote(note) {
-  const created_by = await getCurrentUserId()
   const { data, error } = await supabase
     .from('notes')
-    .insert([{ ...cleanNote(note), created_by }])
+    .insert([cleanNote(note)])
     .select()
     .single()
 

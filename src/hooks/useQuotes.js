@@ -43,17 +43,6 @@ function cleanOrderReturn(orderReturn) {
   }
 }
 
-async function getCurrentUserId() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error) throw error
-
-  return user?.id || null
-}
-
 async function fetchQuotes() {
   const { data, error } = await supabase
     .from('quotes')
@@ -71,10 +60,9 @@ async function fetchQuotes() {
 }
 
 async function createQuote(quote) {
-  const created_by = await getCurrentUserId()
   const { data, error } = await supabase
     .from('quotes')
-    .insert([{ ...cleanQuote(quote), created_by }])
+    .insert([cleanQuote(quote)])
     .select()
     .single()
 

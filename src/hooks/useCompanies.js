@@ -40,17 +40,6 @@ function normalizeStats(stats) {
   }
 }
 
-async function getCurrentUserId() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error) throw error
-
-  return user?.id || null
-}
-
 async function fetchCompanies({ includeInactive = false } = {}) {
   let query = supabase
     .from('companies')
@@ -84,10 +73,9 @@ async function fetchCompanies({ includeInactive = false } = {}) {
 }
 
 async function createCompany({ company, terms }) {
-  const created_by = await getCurrentUserId()
   const { data: createdCompany, error: companyError } = await supabase
     .from('companies')
-    .insert([{ ...cleanCompany(company), created_by, is_active: true }])
+    .insert([{ ...cleanCompany(company), is_active: true }])
     .select()
     .single()
 

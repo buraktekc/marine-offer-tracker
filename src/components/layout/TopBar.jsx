@@ -1,18 +1,6 @@
-import { LogOut, Search } from 'lucide-react'
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { Search } from 'lucide-react'
 
-function TopBar({ user }) {
-  const navigate = useNavigate()
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
-
-  async function handleLogout() {
-    setIsLoggingOut(true)
-    await supabase.auth.signOut()
-    navigate('/login', { replace: true })
-  }
-
+function TopBar() {
   return (
     <header className="flex min-h-16 items-center gap-3 border-b border-slate-200 bg-white px-4 md:px-8">
       <div className="relative min-w-0 max-w-xl flex-1">
@@ -26,22 +14,6 @@ function TopBar({ user }) {
           type="search"
         />
       </div>
-
-      <div className="hidden min-w-0 text-right text-sm text-slate-600 sm:block">
-        <span className="block max-w-[220px] truncate">{user?.email}</span>
-      </div>
-
-      <button
-        type="button"
-        onClick={handleLogout}
-        disabled={isLoggingOut}
-        className="inline-flex h-10 items-center gap-2 rounded bg-purple-brand px-3 text-sm font-semibold text-white transition hover:bg-purple-brand/90 disabled:cursor-not-allowed disabled:opacity-70"
-      >
-        <LogOut className="h-4 w-4" aria-hidden="true" />
-        <span className="hidden sm:inline">
-          {isLoggingOut ? 'Logging out' : 'Logout'}
-        </span>
-      </button>
     </header>
   )
 }
