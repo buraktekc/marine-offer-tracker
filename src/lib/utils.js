@@ -57,3 +57,47 @@ export function normalizeMaybeArray(value) {
 
   return value || null
 }
+
+export const quoteStatuses = [
+  'sent',
+  'won',
+  'partially_won',
+  'lost',
+  'expired',
+  'cancelled',
+]
+
+export const currencies = ['USD', 'EUR', 'TRY', 'GBP', 'AED']
+
+export function formatStatus(value) {
+  if (!value) return '-'
+
+  return value
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
+export function formatSupabaseError(error) {
+  if (!error) return 'Something went wrong.'
+
+  if (error.code === '23505' || error.message?.includes('duplicate key')) {
+    return 'Reference number already exists.'
+  }
+
+  return error.message || 'Something went wrong.'
+}
+
+export function todayDateInput() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+export function suggestOrderStatus(quoteTotal, orderTotal) {
+  const quoteValue = Number(quoteTotal)
+  const orderValue = Number(orderTotal)
+
+  if (!quoteValue || !orderValue) return 'won'
+  if (orderValue > 0 && orderValue < quoteValue) return 'partially_won'
+
+  return 'won'
+}
