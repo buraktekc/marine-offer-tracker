@@ -1,4 +1,5 @@
 import { Edit2, Trash2 } from 'lucide-react'
+import IconButton from '../ui/IconButton'
 import VesselDetail from './VesselDetail'
 import { formatNumber, formatPct } from '../../lib/utils'
 
@@ -20,9 +21,9 @@ function VesselList({ isLoading, onDelete, onEdit, vessels }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="min-w-[1080px] divide-y divide-slate-200 text-left text-sm">
+    <div className="w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="w-full overflow-x-auto">
+        <table className="w-full min-w-[1080px] divide-y divide-slate-200 text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
               <th className="px-4 py-3 font-semibold">Vessel Name</th>
@@ -31,7 +32,7 @@ function VesselList({ isLoading, onDelete, onEdit, vessels }) {
               <th className="px-4 py-3 font-semibold">Active</th>
               <th className="px-4 py-3 font-semibold">Total Offers</th>
               <th className="px-4 py-3 font-semibold">Returned</th>
-              <th className="px-4 py-3 font-semibold">Return Rate</th>
+              <th className="px-4 py-3 font-semibold">Win Rate</th>
               <th className="px-4 py-3 font-semibold">Effective Terms</th>
               <th className="px-4 py-3 text-right font-semibold">Actions</th>
             </tr>
@@ -63,29 +64,24 @@ function VesselList({ isLoading, onDelete, onEdit, vessels }) {
                     {formatNumber(stats.returned_offers || 0)}
                   </td>
                   <td className="px-4 py-3 text-slate-600">
-                    {formatPct(stats.offer_return_rate_pct)}
+                    {formatPct(stats.win_rate_pct)}
                   </td>
                   <td className="px-4 py-3">
                     <VesselDetail terms={vessel.effective_terms} />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
-                      <button
-                        className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 text-slate-600 transition hover:border-teal-brand hover:text-teal-brand"
+                      <IconButton
+                        icon={Edit2}
+                        label="Edit vessel"
                         onClick={() => onEdit(vessel)}
-                        title="Edit vessel"
-                        type="button"
-                      >
-                        <Edit2 className="h-4 w-4" aria-hidden="true" />
-                      </button>
-                      <button
-                        className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 text-slate-600 transition hover:border-red-300 hover:text-red-600"
+                      />
+                      <IconButton
+                        icon={Trash2}
+                        label="Delete vessel"
                         onClick={() => onDelete(vessel)}
-                        title="Delete vessel"
-                        type="button"
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      </button>
+                        variant="danger"
+                      />
                     </div>
                   </td>
                 </tr>
