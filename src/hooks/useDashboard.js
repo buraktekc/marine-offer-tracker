@@ -3,18 +3,28 @@ import { supabase } from '../lib/supabase'
 
 const EMPTY_SUMMARY = {
   total_offers: 0,
-  returned_offers: 0,
+  pending_pricing: 0,
+  not_available: 0,
   open_offers: 0,
+  returned_offers: 0,
   total_quote_amount: 0,
   total_order_amount: 0,
-  offer_return_rate_pct: 0,
-  amount_return_rate_pct: 0,
+  pricing_rate_pct: 0,
+  win_rate_pct: 0,
+  amount_win_rate_pct: 0,
+  avg_response_days: null,
 }
 
 function toNumber(value) {
   if (value === null || value === undefined || value === '') return 0
 
   return Number(value)
+}
+
+function toNullableNumber(value) {
+  if (value === null || value === undefined || value === '') return null
+  const num = Number(value)
+  return Number.isNaN(num) ? null : num
 }
 
 function monthKey(date) {
@@ -59,12 +69,16 @@ function normalizeSummary(summary) {
 
   return {
     total_offers: toNumber(summary.total_offers),
-    returned_offers: toNumber(summary.returned_offers),
+    pending_pricing: toNumber(summary.pending_pricing),
+    not_available: toNumber(summary.not_available),
     open_offers: toNumber(summary.open_offers),
+    returned_offers: toNumber(summary.returned_offers),
     total_quote_amount: toNumber(summary.total_quote_amount),
     total_order_amount: toNumber(summary.total_order_amount),
-    offer_return_rate_pct: toNumber(summary.offer_return_rate_pct),
-    amount_return_rate_pct: toNumber(summary.amount_return_rate_pct),
+    pricing_rate_pct: toNumber(summary.pricing_rate_pct),
+    win_rate_pct: toNumber(summary.win_rate_pct),
+    amount_win_rate_pct: toNumber(summary.amount_win_rate_pct),
+    avg_response_days: toNullableNumber(summary.avg_response_days),
   }
 }
 
@@ -75,11 +89,12 @@ function normalizeTopCompanies(rows = []) {
       ...company,
       total_offers: toNumber(company.total_offers),
       returned_offers: toNumber(company.returned_offers),
-      offer_return_rate_pct: toNumber(company.offer_return_rate_pct),
+      win_rate_pct: toNumber(company.win_rate_pct),
+      pricing_rate_pct: toNumber(company.pricing_rate_pct),
     }))
     .sort((a, b) => {
-      if (b.offer_return_rate_pct !== a.offer_return_rate_pct) {
-        return b.offer_return_rate_pct - a.offer_return_rate_pct
+      if (b.win_rate_pct !== a.win_rate_pct) {
+        return b.win_rate_pct - a.win_rate_pct
       }
 
       return b.total_offers - a.total_offers

@@ -37,6 +37,13 @@ export function formatAmount(value) {
   })
 }
 
+export function formatDays(value) {
+  if (value === null || value === undefined || value === '') return '-'
+  const num = Number(value)
+  if (Number.isNaN(num)) return '-'
+  return `${num.toFixed(1)} days`
+}
+
 export function formatPricingType(value) {
   if (!value) return '-'
 
@@ -72,6 +79,8 @@ export function normalizeMaybeArray(value) {
 }
 
 export const quoteStatuses = [
+  'pending_pricing',
+  'not_available',
   'sent',
   'won',
   'partially_won',
@@ -81,6 +90,19 @@ export const quoteStatuses = [
 ]
 
 export const currencies = ['USD', 'EUR', 'TRY', 'GBP', 'AED']
+
+export const notAvailableCategories = [
+  { value: 'supplier_unavailable', label: 'Supplier Unavailable' },
+  { value: 'out_of_stock', label: 'Out of Stock' },
+  { value: 'insufficient_lead_time', label: 'Insufficient Lead Time' },
+  { value: 'out_of_scope', label: 'Out of Scope' },
+  { value: 'price_uncompetitive', label: 'Price Uncompetitive' },
+  { value: 'other', label: 'Other' },
+]
+
+export function getNotAvailableLabel(value) {
+  return notAvailableCategories.find((c) => c.value === value)?.label || '-'
+}
 
 export function formatStatus(value) {
   if (!value) return '-'

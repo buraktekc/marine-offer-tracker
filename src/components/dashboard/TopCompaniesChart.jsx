@@ -18,7 +18,7 @@ function TopCompaniesChart({ companies, isLoading }) {
           Top Companies
         </p>
         <h2 className="mt-1 text-lg font-semibold text-slate-950">
-          By Return Rate
+          By Win Rate
         </h2>
       </div>
 
@@ -55,12 +55,12 @@ function TopCompaniesChart({ companies, isLoading }) {
                   borderRadius: 8,
                   boxShadow: '0 10px 25px rgb(15 23 42 / 0.08)',
                 }}
-                formatter={(value) => [formatPct(value), 'Return Rate']}
+                formatter={(value) => [formatPct(value), 'Win Rate']}
               />
               <Bar
-                dataKey="offer_return_rate_pct"
+                dataKey="win_rate_pct"
                 fill="#00ADB5"
-                name="Return Rate"
+                name="Win Rate"
                 radius={[0, 6, 6, 0]}
               />
             </BarChart>

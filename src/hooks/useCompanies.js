@@ -29,14 +29,16 @@ function cleanCompanyTerms(terms) {
 }
 
 function normalizeStats(stats) {
+  const toNullable = (v) =>
+    v === null || v === undefined ? null : Number(v)
+
   return {
     total_offers: Number(stats?.total_offers || 0),
+    pending_pricing: Number(stats?.pending_pricing || 0),
+    not_available: Number(stats?.not_available || 0),
     returned_offers: Number(stats?.returned_offers || 0),
-    offer_return_rate_pct:
-      stats?.offer_return_rate_pct === null ||
-      stats?.offer_return_rate_pct === undefined
-        ? null
-        : Number(stats.offer_return_rate_pct),
+    win_rate_pct: toNullable(stats?.win_rate_pct),
+    pricing_rate_pct: toNullable(stats?.pricing_rate_pct),
   }
 }
 

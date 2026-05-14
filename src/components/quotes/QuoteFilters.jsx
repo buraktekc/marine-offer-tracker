@@ -1,4 +1,4 @@
-import { currencies, quoteStatuses } from '../../lib/utils'
+import { currencies, notAvailableCategories, quoteStatuses } from '../../lib/utils'
 
 function QuoteFilters({ companies, filters, onChange, onReset, vessels }) {
   function updateFilter(field, value) {
@@ -9,8 +9,10 @@ function QuoteFilters({ companies, filters, onChange, onReset, vessels }) {
     ? vessels.filter((vessel) => vessel.company_id === filters.company_id)
     : vessels
 
+  const showNaFilter = filters.status === 'not_available'
+
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="w-full rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <label className="block">
           <span className="text-xs font-semibold uppercase text-slate-500">
@@ -73,13 +75,20 @@ function QuoteFilters({ companies, filters, onChange, onReset, vessels }) {
           </span>
           <select
             className="mt-1 h-10 w-full rounded border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-teal-brand focus:ring-2 focus:ring-teal-brand/20"
-            onChange={(event) => updateFilter('status', event.target.value)}
+            onChange={(event) =>
+              onChange({
+                ...filters,
+                status: event.target.value,
+                na_reason:
+                  event.target.value === 'not_available' ? filters.na_reason : '',
+              })
+            }
             value={filters.status}
           >
             <option value="">All statuses</option>
             {quoteStatuses.map((status) => (
               <option key={status} value={status}>
-                {status.replace('_', ' ')}
+                {status.replace(/_/g, ' ')}
               </option>
             ))}
           </select>
@@ -138,6 +147,26 @@ function QuoteFilters({ companies, filters, onChange, onReset, vessels }) {
             value={filters.port}
           />
         </label>
+
+        {showNaFilter ? (
+          <label className="block xl:col-span-2">
+            <span className="text-xs font-semibold uppercase text-slate-500">
+              NA Reason
+            </span>
+            <select
+              className="mt-1 h-10 w-full rounded border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-teal-brand focus:ring-2 focus:ring-teal-brand/20"
+              onChange={(event) => updateFilter('na_reason', event.target.value)}
+              value={filters.na_reason || ''}
+            >
+              <option value="">All reasons</option>
+              {notAvailableCategories.map((category) => (
+                <option key={category.value} value={category.value}>
+                  {category.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
       </div>
 
       <div className="mt-4 flex justify-end">
