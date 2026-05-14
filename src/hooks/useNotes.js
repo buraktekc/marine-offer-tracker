@@ -8,20 +8,22 @@ function cleanNote(note) {
     content: normalizeEmpty(note.content),
     category: normalizeEmpty(note.category),
     deadline: normalizeEmpty(note.deadline),
+    vessel_id: normalizeEmpty(note.vessel_id),
+    priority: note.priority || 'normal',
+    author_name: normalizeEmpty(note.author_name),
     is_archived: Boolean(note.is_archived),
   }
 }
 
 async function fetchNotes() {
   const { data, error } = await supabase
-    .from('notes')
+    .from('notes_enriched')
     .select('*')
     .order('is_archived', { ascending: true })
     .order('deadline', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
 
   if (error) throw error
-
   return data || []
 }
 
@@ -33,7 +35,6 @@ async function createNote(note) {
     .single()
 
   if (error) throw error
-
   return data
 }
 
@@ -46,8 +47,13 @@ async function updateNote({ id, note }) {
     .single()
 
   if (error) throw error
-
   return data
+}
+
+async function deleteNote(id) {
+  const { error } = await supabase.from('notes').delete().eq('id', id)
+  if (error) throw error
+  return id
 }
 
 async function toggleArchive({ id, is_archived }) {
@@ -59,14 +65,7 @@ async function toggleArchive({ id, is_archived }) {
     .single()
 
   if (error) throw error
-
   return data
-}
-
-async function deleteNote(id) {
-  const { error } = await supabase.from('notes').delete().eq('id', id)
-
-  if (error) throw error
 }
 
 export function useNotes() {
@@ -77,26 +76,14 @@ export function useNotes() {
     queryFn: fetchNotes,
   })
 
-  const invalidateNotes = () =>
+  const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['notes'] })
 
   return {
     ...notesQuery,
-    createNote: useMutation({
-      mutationFn: createNote,
-      onSuccess: invalidateNotes,
-    }),
-    deleteNote: useMutation({
-      mutationFn: deleteNote,
-      onSuccess: invalidateNotes,
-    }),
-    toggleArchive: useMutation({
-      mutationFn: toggleArchive,
-      onSuccess: invalidateNotes,
-    }),
-    updateNote: useMutation({
-      mutationFn: updateNote,
-      onSuccess: invalidateNotes,
-    }),
+    createNote: useMutation({ mutationFn: createNote, onSuccess: invalidate }),
+    updateNote: useMutation({ mutationFn: updateNote, onSuccess: invalidate }),
+    deleteNote: useMutation({ mutationFn: deleteNote, onSuccess: invalidate }),
+    toggleArchive: useMutation({ mutationFn: toggleArchive, onSuccess: invalidate }),
   }
 }
