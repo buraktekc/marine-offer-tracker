@@ -2,11 +2,15 @@ import {
   CheckCircle2,
   Edit2,
   Eye,
+  MinusCircle,
+  RotateCcw,
+  Send,
   ShoppingCart,
   Slash,
   XCircle,
 } from 'lucide-react'
 import CurrencyAmount from '../ui/CurrencyAmount'
+import IconButton from '../ui/IconButton'
 import StatusBadge from '../ui/StatusBadge'
 import { formatDate, formatPct } from '../../lib/utils'
 
@@ -15,7 +19,10 @@ function QuoteList({
   onCancel,
   onEdit,
   onMarkAsLost,
+  onMarkAsNotAvailable,
   onMarkAsOrder,
+  onMarkAsSent,
+  onRevertToPending,
   onView,
   quotes,
 }) {
@@ -36,9 +43,9 @@ function QuoteList({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="min-w-[1120px] divide-y divide-slate-200 text-left text-sm">
+    <div className="w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="w-full overflow-x-auto">
+        <table className="w-full min-w-[1180px] divide-y divide-slate-200 text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
               <th className="px-4 py-3 font-semibold">Reference No</th>
@@ -55,92 +62,123 @@ function QuoteList({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {quotes.map((quote) => (
-              <tr key={quote.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-950">
-                  {quote.reference_no}
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  {quote.customer_reference || '-'}
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  {quote.company?.name || '-'}
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  {quote.vessel?.name || '-'}
-                </td>
-                <td className="px-4 py-3 text-slate-600">{quote.port || '-'}</td>
-                <td className="px-4 py-3 text-slate-600">
-                  {formatDate(quote.quote_date)}
-                </td>
-                <td className="px-4 py-3">
-                  <CurrencyAmount
-                    amount={quote.quote_total_amount}
-                    currency={quote.quote_currency}
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  <CurrencyAmount
-                    amount={quote.order_total_amount}
-                    currency={quote.order_currency}
-                  />
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  {formatPct(quote.return_rate_pct)}
-                </td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={quote.status} />
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <button
-                      className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 text-slate-600 transition hover:border-teal-brand hover:text-teal-brand"
-                      onClick={() => onView(quote)}
-                      title="View quote"
-                      type="button"
-                    >
-                      <Eye className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                    <button
-                      className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 text-slate-600 transition hover:border-teal-brand hover:text-teal-brand"
-                      onClick={() => onEdit(quote)}
-                      title="Edit quote"
-                      type="button"
-                    >
-                      <Edit2 className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                    <button
-                      className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 text-slate-600 transition hover:border-emerald-300 hover:text-emerald-600"
-                      onClick={() => onMarkAsOrder(quote)}
-                      title="Mark as order"
-                      type="button"
-                    >
-                      <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                    <button
-                      className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 text-slate-600 transition hover:border-red-300 hover:text-red-600"
-                      onClick={() => onMarkAsLost(quote)}
-                      title="Mark as lost"
-                      type="button"
-                    >
-                      <XCircle className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                    <button
-                      className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 text-slate-600 transition hover:border-amber-300 hover:text-amber-600"
-                      onClick={() => onCancel(quote)}
-                      title="Cancel quote"
-                      type="button"
-                    >
-                      {quote.status === 'cancelled' ? (
-                        <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                      ) : (
-                        <Slash className="h-4 w-4" aria-hidden="true" />
-                      )}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {quotes.map((quote) => {
+              const isPending = quote.status === 'pending_pricing'
+              const isNotAvailable = quote.status === 'not_available'
+              const isSent = quote.status === 'sent'
+              const isPartial = quote.status === 'partially_won'
+              const isCancelled = quote.status === 'cancelled'
+              const isClosed = ['won', 'lost', 'expired', 'cancelled'].includes(
+                quote.status,
+              )
+
+              return (
+                <tr key={quote.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-950">
+                    {quote.reference_no}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {quote.customer_reference || '-'}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {quote.company?.name || '-'}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {quote.vessel?.name || '-'}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">{quote.port || '-'}</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {formatDate(quote.quote_date)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <CurrencyAmount
+                      amount={quote.quote_total_amount}
+                      currency={quote.quote_currency}
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <CurrencyAmount
+                      amount={quote.order_total_amount}
+                      currency={quote.order_currency}
+                    />
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {formatPct(quote.return_rate_pct)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={quote.status} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <IconButton
+                        icon={Eye}
+                        label="View details"
+                        onClick={() => onView(quote)}
+                      />
+                      <IconButton
+                        icon={Edit2}
+                        label="Edit quote"
+                        onClick={() => onEdit(quote)}
+                      />
+
+                      {isPending ? (
+                        <>
+                          <IconButton
+                            icon={Send}
+                            label="Mark as sent (complete pricing)"
+                            onClick={() => onMarkAsSent(quote)}
+                            variant="primary"
+                          />
+                          <IconButton
+                            icon={MinusCircle}
+                            label="Mark as not available"
+                            onClick={() => onMarkAsNotAvailable(quote)}
+                            variant="danger"
+                          />
+                        </>
+                      ) : null}
+
+                      {isNotAvailable ? (
+                        <IconButton
+                          icon={RotateCcw}
+                          label="Revert to pending"
+                          onClick={() => onRevertToPending(quote)}
+                          variant="warning"
+                        />
+                      ) : null}
+
+                      {(isSent || isPartial) ? (
+                        <IconButton
+                          icon={ShoppingCart}
+                          label="Mark as order"
+                          onClick={() => onMarkAsOrder(quote)}
+                          variant="primary"
+                        />
+                      ) : null}
+
+                      {(isSent || isPartial) ? (
+                        <IconButton
+                          icon={XCircle}
+                          label="Mark as lost"
+                          onClick={() => onMarkAsLost(quote)}
+                          variant="danger"
+                        />
+                      ) : null}
+
+                      {!isClosed ? (
+                        <IconButton
+                          icon={isCancelled ? CheckCircle2 : Slash}
+                          label={isCancelled ? 'Cancelled' : 'Cancel quote'}
+                          onClick={() => onCancel(quote)}
+                          variant="warning"
+                          disabled={isCancelled}
+                        />
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
