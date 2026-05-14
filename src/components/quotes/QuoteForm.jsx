@@ -8,6 +8,7 @@ function quoteStateFromInitial(initialQuote, companies) {
     company_id: initialQuote?.company_id || companies?.[0]?.id || '',
     vessel_id: initialQuote?.vessel_id || '',
     quote_date: initialQuote?.quote_date || todayDateInput(),
+    rfq_received_date: initialQuote?.rfq_received_date || todayDateInput(),
     sent_date: initialQuote?.sent_date || '',
     validity_date: initialQuote?.validity_date || '',
     port: initialQuote?.port || '',
@@ -15,7 +16,7 @@ function quoteStateFromInitial(initialQuote, companies) {
     quote_total_amount: initialQuote?.quote_total_amount ?? '',
     quote_currency: initialQuote?.quote_currency || 'USD',
     item_count: initialQuote?.item_count ?? 0,
-    status: initialQuote?.status || 'sent',
+    status: initialQuote?.status || 'pending_pricing',
     lost_reason: initialQuote?.lost_reason || '',
     notes: initialQuote?.notes || '',
   }
@@ -32,6 +33,7 @@ function QuoteForm({
   vessels,
 }) {
   const currentQuote = quote || quoteStateFromInitial(initialQuote, companies)
+  const isPending = currentQuote.status === 'pending_pricing'
 
   function updateField(field, value) {
     onChange({ ...currentQuote, [field]: value })
@@ -61,8 +63,14 @@ function QuoteForm({
     >
       <div className="mb-5">
         <h2 className="text-lg font-semibold text-slate-950">
-          {initialQuote ? 'Edit Quote' : 'New Quote'}
+          {initialQuote ? 'Edit Quote' : 'New Quote (RFQ)'}
         </h2>
+        {isPending && !initialQuote ? (
+          <p className="mt-1 text-sm text-slate-500">
+            Saved as <strong>Pending Pricing</strong>. Complete pricing later or
+            mark as Not Available from the list.
+          </p>
+        ) : null}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -96,7 +104,7 @@ function QuoteForm({
           >
             {quoteStatuses.map((status) => (
               <option key={status} value={status}>
-                {status.replace('_', ' ')}
+                {status.replace(/_/g, ' ')}
               </option>
             ))}
           </select>
@@ -148,7 +156,21 @@ function QuoteForm({
         </label>
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-3">
+      <div className="mt-4 grid gap-4 md:grid-cols-4">
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700">
+            RFQ Received Date
+          </span>
+          <input
+            className="mt-1 h-10 w-full rounded border border-slate-300 px-3 text-sm outline-none transition focus:border-teal-brand focus:ring-2 focus:ring-teal-brand/20"
+            onChange={(event) =>
+              updateField('rfq_received_date', event.target.value)
+            }
+            type="date"
+            value={currentQuote.rfq_received_date}
+          />
+        </label>
+
         <label className="block">
           <span className="text-sm font-medium text-slate-700">Quote Date</span>
           <input
@@ -203,7 +225,9 @@ function QuoteForm({
 
       <div className="mt-4 grid gap-4 md:grid-cols-3">
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Quote Total</span>
+          <span className="text-sm font-medium text-slate-700">
+            Quote Total {isPending ? <span className="text-slate-400">(optional)</span> : null}
+          </span>
           <input
             className="mt-1 h-10 w-full rounded border border-slate-300 px-3 text-sm outline-none transition focus:border-teal-brand focus:ring-2 focus:ring-teal-brand/20"
             min="0"
