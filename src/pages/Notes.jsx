@@ -1,7 +1,10 @@
 import { AlertCircle, Plus } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import NoteDetailDrawer from '../components/notes/NoteDetailDrawer'
 import NoteForm from '../components/notes/NoteForm'
 import NoteList from '../components/notes/NoteList'
+import ShortcutsHelp from '../components/notes/ShortcutsHelp'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { useNotes } from '../hooks/useNotes'
 import { formatSupabaseError } from '../lib/utils'
 
@@ -15,10 +18,16 @@ function Notes() {
     toggleArchive,
     updateNote,
   } = useNotes()
+
   const [editingNote, setEditingNote] = useState(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [notice, setNotice] = useState(null)
+  const [openNote, setOpenNote] = useState(null)
   const [showArchived, setShowArchived] = useState(false)
+  const [showShortcuts, setShowShortcuts] = useState(false)
+
+  const filteredNotes =
+    notes?.filter((note) => Boolean(note.is_archived) === showArchived) || []
 
   const isSubmitting =
     createNote.isPending ||
@@ -26,40 +35,31 @@ function Notes() {
     toggleArchive.isPending ||
     deleteNote.isPending
 
-  const visibleNotes = useMemo(
-    () => (notes || []).filter((note) => note.is_archived === showArchived),
-    [notes, showArchived],
-  )
-
-  function openNewNoteForm() {
+  function openNew() {
     setEditingNote(null)
-    setNotice(null)
     setIsFormOpen(true)
   }
 
-  function openEditNoteForm(note) {
+  function openEdit(note) {
     setEditingNote(note)
-    setNotice(null)
     setIsFormOpen(true)
   }
 
   function closeForm() {
-    setEditingNote(null)
     setIsFormOpen(false)
+    setEditingNote(null)
   }
 
-  async function handleSubmit(note) {
+  async function handleSubmit(nextNote) {
     setNotice(null)
-
     try {
       if (editingNote) {
-        await updateNote.mutateAsync({ id: editingNote.id, note })
+        await updateNote.mutateAsync({ id: editingNote.id, note: nextNote })
         setNotice({ type: 'success', text: 'Note updated.' })
       } else {
-        await createNote.mutateAsync(note)
+        await createNote.mutateAsync(nextNote)
         setNotice({ type: 'success', text: 'Note created.' })
       }
-
       closeForm()
     } catch (submitError) {
       setNotice({ type: 'error', text: formatSupabaseError(submitError) })
@@ -67,16 +67,10 @@ function Notes() {
   }
 
   async function handleToggleArchive(note) {
-    setNotice(null)
-
     try {
       await toggleArchive.mutateAsync({
         id: note.id,
         is_archived: !note.is_archived,
-      })
-      setNotice({
-        type: 'success',
-        text: note.is_archived ? 'Note restored.' : 'Note archived.',
       })
     } catch (submitError) {
       setNotice({ type: 'error', text: formatSupabaseError(submitError) })
@@ -87,55 +81,62 @@ function Notes() {
     const shouldDelete = window.confirm(`Delete note "${note.title}"?`)
     if (!shouldDelete) return
 
-    setNotice(null)
-
     try {
       await deleteNote.mutateAsync(note.id)
-      setNotice({ type: 'success', text: 'Note deleted.' })
+      if (openNote?.id === note.id) setOpenNote(null)
     } catch (submitError) {
       setNotice({ type: 'error', text: formatSupabaseError(submitError) })
     }
   }
 
+  useKeyboardShortcuts([
+    {
+      combo: 'mod+alt+n',
+      handler: () => openNew(),
+      description: 'New note',
+    },
+    {
+      combo: 'esc',
+      handler: () => {
+        if (showShortcuts) setShowShortcuts(false)
+        else if (isFormOpen) closeForm()
+        else if (openNote) setOpenNote(null)
+      },
+      description: 'Close drawer / form',
+    },
+    {
+      combo: '?',
+      handler: () => setShowShortcuts(true),
+      description: 'Show shortcuts',
+    },
+  ])
+
   return (
-    <section className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <section className="w-full space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase text-teal-brand">Notes</p>
-          <h1 className="mt-2 text-2xl font-semibold text-slate-950">Notes</h1>
+          <h1 className="mt-2 text-2xl font-semibold text-slate-950">
+            Marine Notes
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Press{' '}
+            <kbd className="rounded bg-slate-100 px-1 py-0.5 text-xs">?</kbd>{' '}
+            for shortcuts.
+          </p>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="inline-flex rounded border border-slate-200 bg-white p-1 shadow-sm">
-            <button
-              className={[
-                'h-9 rounded px-3 text-sm font-semibold transition',
-                !showArchived
-                  ? 'bg-teal-brand text-sidebar'
-                  : 'text-slate-600 hover:bg-slate-50',
-              ].join(' ')}
-              onClick={() => setShowArchived(false)}
-              type="button"
-            >
-              Active
-            </button>
-            <button
-              className={[
-                'h-9 rounded px-3 text-sm font-semibold transition',
-                showArchived
-                  ? 'bg-teal-brand text-sidebar'
-                  : 'text-slate-600 hover:bg-slate-50',
-              ].join(' ')}
-              onClick={() => setShowArchived(true)}
-              type="button"
-            >
-              Archived
-            </button>
-          </div>
-
+        <div className="flex flex-wrap gap-2">
           <button
-            className="inline-flex h-10 items-center justify-center gap-2 rounded bg-teal-brand px-4 text-sm font-semibold text-sidebar transition hover:bg-teal-brand/90"
-            onClick={openNewNoteForm}
+            className="h-10 rounded border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            onClick={() => setShowArchived((value) => !value)}
+            type="button"
+          >
+            {showArchived ? 'Show active' : 'Show archived'}
+          </button>
+          <button
+            className="inline-flex h-10 items-center gap-2 rounded bg-teal-brand px-4 text-sm font-semibold text-sidebar transition hover:bg-teal-brand/90"
+            onClick={openNew}
             type="button"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
@@ -168,7 +169,6 @@ function Notes() {
         <NoteForm
           initialNote={editingNote}
           isSubmitting={isSubmitting}
-          key={editingNote?.id || 'new-note'}
           onCancel={closeForm}
           onSubmit={handleSubmit}
         />
@@ -176,12 +176,21 @@ function Notes() {
 
       <NoteList
         isLoading={isLoading}
-        notes={visibleNotes}
+        notes={filteredNotes}
         onDelete={handleDelete}
-        onEdit={openEditNoteForm}
+        onEdit={openEdit}
+        onOpenDetail={setOpenNote}
         onToggleArchive={handleToggleArchive}
         showArchived={showArchived}
       />
+
+      {openNote ? (
+        <NoteDetailDrawer note={openNote} onClose={() => setOpenNote(null)} />
+      ) : null}
+
+      {showShortcuts ? (
+        <ShortcutsHelp onClose={() => setShowShortcuts(false)} />
+      ) : null}
     </section>
   )
 }
