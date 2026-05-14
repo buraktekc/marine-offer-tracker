@@ -91,7 +91,7 @@ function Notes() {
 
   useKeyboardShortcuts([
     {
-      combo: 'mod+n',
+      combo: 'mod+alt+n',
       handler: () => openNew(),
       description: 'New note',
     },
