@@ -18,6 +18,7 @@ function cleanQuote(quote) {
     company_id: quote.company_id,
     vessel_id: normalizeEmpty(quote.vessel_id),
     quote_date: quote.quote_date,
+    rfq_received_date: normalizeEmpty(quote.rfq_received_date),
     sent_date: normalizeEmpty(quote.sent_date),
     validity_date: normalizeEmpty(quote.validity_date),
     port: normalizeEmpty(quote.port),
@@ -25,8 +26,12 @@ function cleanQuote(quote) {
     quote_total_amount: normalizeNumber(quote.quote_total_amount),
     quote_currency: normalizeEmpty(quote.quote_currency),
     item_count: normalizeInteger(quote.item_count),
-    status: quote.status || 'sent',
+    status: quote.status || 'pending_pricing',
     lost_reason: normalizeEmpty(quote.lost_reason),
+    not_available_reason_category: normalizeEmpty(
+      quote.not_available_reason_category,
+    ),
+    not_available_note: normalizeEmpty(quote.not_available_note),
     notes: normalizeEmpty(quote.notes),
   }
 }
@@ -39,6 +44,18 @@ function cleanOrderReturn(orderReturn) {
     order_currency: normalizeEmpty(orderReturn.order_currency),
     order_difference_note: normalizeEmpty(orderReturn.order_difference_note),
     status: orderReturn.status,
+    updated_at: new Date().toISOString(),
+  }
+}
+
+function cleanPricingComplete(payload) {
+  return {
+    sent_date: normalizeEmpty(payload.sent_date),
+    validity_date: normalizeEmpty(payload.validity_date),
+    quote_total_amount: normalizeNumber(payload.quote_total_amount),
+    quote_currency: normalizeEmpty(payload.quote_currency),
+    item_count: normalizeInteger(payload.item_count),
+    status: 'sent',
     updated_at: new Date().toISOString(),
   }
 }
@@ -115,6 +132,59 @@ async function markQuoteAsLost({ id, lost_reason, notes }) {
   return data
 }
 
+async function markQuoteAsSent({ id, payload }) {
+  const { data, error } = await supabase
+    .from('quotes')
+    .update(cleanPricingComplete(payload))
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+
+async function markQuoteAsNotAvailable({
+  id,
+  not_available_reason_category,
+  not_available_note,
+}) {
+  const { data, error } = await supabase
+    .from('quotes')
+    .update({
+      not_available_reason_category: normalizeEmpty(not_available_reason_category),
+      not_available_note: normalizeEmpty(not_available_note),
+      status: 'not_available',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+
+async function revertToPending(id) {
+  const { data, error } = await supabase
+    .from('quotes')
+    .update({
+      status: 'pending_pricing',
+      not_available_reason_category: null,
+      not_available_note: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+
 async function cancelQuote(id) {
   const { data, error } = await supabase
     .from('quotes')
@@ -155,6 +225,18 @@ export function useQuotes() {
     }),
     markQuoteAsOrder: useMutation({
       mutationFn: markQuoteAsOrder,
+      onSuccess: invalidateQuotes,
+    }),
+    markQuoteAsSent: useMutation({
+      mutationFn: markQuoteAsSent,
+      onSuccess: invalidateQuotes,
+    }),
+    markQuoteAsNotAvailable: useMutation({
+      mutationFn: markQuoteAsNotAvailable,
+      onSuccess: invalidateQuotes,
+    }),
+    revertToPending: useMutation({
+      mutationFn: revertToPending,
       onSuccess: invalidateQuotes,
     }),
     updateQuote: useMutation({
