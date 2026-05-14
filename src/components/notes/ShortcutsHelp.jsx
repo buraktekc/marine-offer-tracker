@@ -1,7 +1,7 @@
 import { X } from 'lucide-react'
 
 const shortcuts = [
-  { combo: 'Cmd/Ctrl + N', description: 'New note' },
+  { combo: 'Cmd/Ctrl + Alt + N', description: 'New note' },
   { combo: 'Cmd/Ctrl + Enter', description: 'Send comment / save note' },
   { combo: 'Esc', description: 'Close drawer or form' },
   { combo: '?', description: 'Show shortcuts help' },
